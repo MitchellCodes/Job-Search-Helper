@@ -1,0 +1,26 @@
+[project]
+name = "jobhelper"
+version = "0.1.0"
+description = "Local, portable job-search helper: fit scoring and ATS-aware resume tailoring"
+requires-python = ">=3.11"
+dependencies = [
+    "pywebview",
+    "pypdf",
+    "onnxruntime",
+    "numpy",
+    "tokenizers",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pyinstaller"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

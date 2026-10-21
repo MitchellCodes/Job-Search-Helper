@@ -1,0 +1,949 @@
+{
+  "Python": {
+    "category": "language",
+    "aliases": [
+      "python3"
+    ]
+  },
+  "Java": {
+    "category": "language",
+    "aliases": []
+  },
+  "JavaScript": {
+    "category": "language",
+    "aliases": [
+      "js",
+      "ecmascript",
+      "es6"
+    ]
+  },
+  "TypeScript": {
+    "category": "language",
+    "aliases": [
+      "ts"
+    ]
+  },
+  "C++": {
+    "category": "language",
+    "aliases": [
+      "cpp"
+    ]
+  },
+  "C#": {
+    "category": "language",
+    "aliases": [
+      "csharp",
+      "c sharp"
+    ]
+  },
+  "C": {
+    "category": "language",
+    "aliases": [],
+    "case_sensitive": true
+  },
+  "Go": {
+    "category": "language",
+    "aliases": [
+      "golang"
+    ],
+    "case_sensitive": true
+  },
+  "Rust": {
+    "category": "language",
+    "aliases": []
+  },
+  "Ruby": {
+    "category": "language",
+    "aliases": []
+  },
+  "PHP": {
+    "category": "language",
+    "aliases": []
+  },
+  "Swift": {
+    "category": "language",
+    "aliases": [],
+    "case_sensitive": true
+  },
+  "Kotlin": {
+    "category": "language",
+    "aliases": []
+  },
+  "Scala": {
+    "category": "language",
+    "aliases": []
+  },
+  "R": {
+    "category": "language",
+    "aliases": [],
+    "case_sensitive": true
+  },
+  "MATLAB": {
+    "category": "language",
+    "aliases": []
+  },
+  "SQL": {
+    "category": "language",
+    "aliases": [
+      "t-sql",
+      "tsql",
+      "pl/sql",
+      "structured query language"
+    ]
+  },
+  "Bash": {
+    "category": "language",
+    "aliases": [
+      "shell scripting",
+      "shell script"
+    ]
+  },
+  "PowerShell": {
+    "category": "language",
+    "aliases": []
+  },
+  "HTML": {
+    "category": "language",
+    "aliases": [
+      "html5"
+    ]
+  },
+  "CSS": {
+    "category": "language",
+    "aliases": [
+      "css3",
+      "sass",
+      "scss"
+    ]
+  },
+  "React": {
+    "category": "framework",
+    "aliases": [
+      "react.js",
+      "reactjs"
+    ]
+  },
+  "Angular": {
+    "category": "framework",
+    "aliases": [
+      "angularjs"
+    ]
+  },
+  "Vue": {
+    "category": "framework",
+    "aliases": [
+      "vue.js",
+      "vuejs"
+    ]
+  },
+  "Node.js": {
+    "category": "framework",
+    "aliases": [
+      "node",
+      "nodejs"
+    ]
+  },
+  "Django": {
+    "category": "framework",
+    "aliases": []
+  },
+  "Flask": {
+    "category": "framework",
+    "aliases": []
+  },
+  "FastAPI": {
+    "category": "framework",
+    "aliases": []
+  },
+  ".NET": {
+    "category": "framework",
+    "aliases": [
+      "dotnet",
+      "asp.net",
+      ".net core"
+    ]
+  },
+  "Rails": {
+    "category": "framework",
+    "aliases": [
+      "ruby on rails"
+    ]
+  },
+  "REST APIs": {
+    "category": "practice",
+    "aliases": [
+      "rest",
+      "restful",
+      "rest api",
+      "restful apis",
+      "web services",
+      "api development"
+    ]
+  },
+  "GraphQL": {
+    "category": "practice",
+    "aliases": []
+  },
+  "Microservices": {
+    "category": "practice",
+    "aliases": [
+      "microservice"
+    ]
+  },
+  "PostgreSQL": {
+    "category": "database",
+    "aliases": [
+      "postgres"
+    ]
+  },
+  "MySQL": {
+    "category": "database",
+    "aliases": []
+  },
+  "SQL Server": {
+    "category": "database",
+    "aliases": [
+      "mssql",
+      "microsoft sql server"
+    ]
+  },
+  "Oracle": {
+    "category": "database",
+    "aliases": [
+      "oracle db"
+    ]
+  },
+  "MongoDB": {
+    "category": "database",
+    "aliases": [
+      "mongo"
+    ]
+  },
+  "Redis": {
+    "category": "database",
+    "aliases": []
+  },
+  "SQLite": {
+    "category": "database",
+    "aliases": []
+  },
+  "NoSQL": {
+    "category": "database",
+    "aliases": []
+  },
+  "Snowflake": {
+    "category": "database",
+    "aliases": []
+  },
+  "BigQuery": {
+    "category": "database",
+    "aliases": []
+  },
+  "Redshift": {
+    "category": "database",
+    "aliases": []
+  },
+  "Data Warehousing": {
+    "category": "data",
+    "aliases": [
+      "data warehouse",
+      "data warehouses"
+    ]
+  },
+  "ETL": {
+    "category": "data",
+    "aliases": [
+      "elt",
+      "data pipelines",
+      "data pipeline"
+    ]
+  },
+  "Airflow": {
+    "category": "data",
+    "aliases": [
+      "apache airflow"
+    ]
+  },
+  "Spark": {
+    "category": "data",
+    "aliases": [
+      "apache spark",
+      "pyspark"
+    ]
+  },
+  "Hadoop": {
+    "category": "data",
+    "aliases": []
+  },
+  "Kafka": {
+    "category": "data",
+    "aliases": [
+      "apache kafka"
+    ]
+  },
+  "dbt": {
+    "category": "data",
+    "aliases": []
+  },
+  "Pandas": {
+    "category": "data",
+    "aliases": []
+  },
+  "NumPy": {
+    "category": "data",
+    "aliases": []
+  },
+  "Data Analysis": {
+    "category": "data",
+    "aliases": [
+      "data analytics",
+      "analyzing data",
+      "analyze data"
+    ]
+  },
+  "Data Visualization": {
+    "category": "data",
+    "aliases": [
+      "data visualisation",
+      "visualizations",
+      "dashboards",
+      "dashboarding"
+    ]
+  },
+  "Statistics": {
+    "category": "data",
+    "aliases": [
+      "statistical analysis",
+      "statistical"
+    ]
+  },
+  "A/B Testing": {
+    "category": "data",
+    "aliases": [
+      "ab testing",
+      "experimentation",
+      "split testing"
+    ]
+  },
+  "Machine Learning": {
+    "category": "data",
+    "aliases": [
+      "ml"
+    ]
+  },
+  "Deep Learning": {
+    "category": "data",
+    "aliases": []
+  },
+  "NLP": {
+    "category": "data",
+    "aliases": [
+      "natural language processing"
+    ]
+  },
+  "TensorFlow": {
+    "category": "data",
+    "aliases": []
+  },
+  "PyTorch": {
+    "category": "data",
+    "aliases": []
+  },
+  "scikit-learn": {
+    "category": "data",
+    "aliases": [
+      "sklearn",
+      "scikit learn"
+    ]
+  },
+  "Tableau": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Power BI": {
+    "category": "tool",
+    "aliases": [
+      "powerbi"
+    ]
+  },
+  "Looker": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Excel": {
+    "category": "tool",
+    "aliases": [
+      "Microsoft Excel",
+      "MS Excel",
+      "Advanced Excel"
+    ],
+    "case_sensitive": true
+  },
+  "Google Sheets": {
+    "category": "tool",
+    "aliases": [
+      "google sheet"
+    ]
+  },
+  "Jupyter": {
+    "category": "tool",
+    "aliases": [
+      "jupyter notebook",
+      "jupyter notebooks"
+    ]
+  },
+  "Git": {
+    "category": "tool",
+    "aliases": [
+      "version control"
+    ]
+  },
+  "GitHub": {
+    "category": "tool",
+    "aliases": []
+  },
+  "GitLab": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Jira": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Confluence": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Linux": {
+    "category": "tool",
+    "aliases": [
+      "unix"
+    ]
+  },
+  "Docker": {
+    "category": "tool",
+    "aliases": [
+      "containers",
+      "containerization"
+    ]
+  },
+  "Kubernetes": {
+    "category": "tool",
+    "aliases": [
+      "k8s"
+    ]
+  },
+  "Terraform": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Ansible": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Jenkins": {
+    "category": "tool",
+    "aliases": []
+  },
+  "CI/CD": {
+    "category": "practice",
+    "aliases": [
+      "continuous integration",
+      "continuous delivery",
+      "continuous deployment",
+      "ci cd"
+    ]
+  },
+  "DevOps": {
+    "category": "practice",
+    "aliases": []
+  },
+  "AWS": {
+    "category": "cloud",
+    "aliases": [
+      "amazon web services",
+      "ec2",
+      "amazon s3"
+    ]
+  },
+  "Azure": {
+    "category": "cloud",
+    "aliases": [
+      "microsoft azure"
+    ]
+  },
+  "GCP": {
+    "category": "cloud",
+    "aliases": [
+      "google cloud",
+      "google cloud platform"
+    ]
+  },
+  "Cloud Computing": {
+    "category": "cloud",
+    "aliases": [
+      "cloud infrastructure",
+      "cloud services"
+    ]
+  },
+  "Agile": {
+    "category": "practice",
+    "aliases": [
+      "agile methodologies",
+      "agile methodology"
+    ]
+  },
+  "Scrum": {
+    "category": "practice",
+    "aliases": []
+  },
+  "Kanban": {
+    "category": "practice",
+    "aliases": []
+  },
+  "Unit Testing": {
+    "category": "practice",
+    "aliases": [
+      "unit tests",
+      "test-driven development",
+      "tdd",
+      "automated testing",
+      "pytest",
+      "junit"
+    ]
+  },
+  "Code Review": {
+    "category": "practice",
+    "aliases": [
+      "code reviews",
+      "peer review"
+    ]
+  },
+  "Object-Oriented Programming": {
+    "category": "practice",
+    "aliases": [
+      "oop",
+      "object oriented",
+      "object-oriented design"
+    ]
+  },
+  "Data Structures": {
+    "category": "practice",
+    "aliases": [
+      "algorithms",
+      "data structures and algorithms"
+    ]
+  },
+  "System Design": {
+    "category": "practice",
+    "aliases": [
+      "distributed systems",
+      "scalable systems"
+    ]
+  },
+  "Security": {
+    "category": "practice",
+    "aliases": [
+      "cybersecurity",
+      "information security",
+      "infosec"
+    ]
+  },
+  "Networking": {
+    "category": "practice",
+    "aliases": [
+      "tcp/ip",
+      "network administration"
+    ]
+  },
+  "Technical Support": {
+    "category": "practice",
+    "aliases": [
+      "help desk",
+      "helpdesk",
+      "it support",
+      "desktop support",
+      "troubleshooting"
+    ]
+  },
+  "Active Directory": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Salesforce": {
+    "category": "tool",
+    "aliases": [
+      "sfdc"
+    ]
+  },
+  "HubSpot": {
+    "category": "tool",
+    "aliases": []
+  },
+  "CRM": {
+    "category": "tool",
+    "aliases": [
+      "customer relationship management"
+    ]
+  },
+  "SAP": {
+    "category": "tool",
+    "aliases": []
+  },
+  "QuickBooks": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Figma": {
+    "category": "tool",
+    "aliases": []
+  },
+  "Adobe Creative Suite": {
+    "category": "tool",
+    "aliases": [
+      "photoshop",
+      "illustrator",
+      "indesign",
+      "adobe creative cloud"
+    ]
+  },
+  "UI/UX Design": {
+    "category": "practice",
+    "aliases": [
+      "ux design",
+      "ui design",
+      "user experience",
+      "user interface design",
+      "wireframing",
+      "prototyping"
+    ]
+  },
+  "SEO": {
+    "category": "practice",
+    "aliases": [
+      "search engine optimization"
+    ]
+  },
+  "Google Analytics": {
+    "category": "tool",
+    "aliases": [
+      "ga4"
+    ]
+  },
+  "Content Marketing": {
+    "category": "practice",
+    "aliases": [
+      "content creation",
+      "copywriting"
+    ]
+  },
+  "Social Media": {
+    "category": "practice",
+    "aliases": [
+      "social media marketing"
+    ]
+  },
+  "Email Marketing": {
+    "category": "practice",
+    "aliases": []
+  },
+  "Project Management": {
+    "category": "practice",
+    "aliases": [
+      "managing projects",
+      "project planning"
+    ]
+  },
+  "Product Management": {
+    "category": "practice",
+    "aliases": [
+      "product roadmap",
+      "roadmapping"
+    ]
+  },
+  "Budgeting": {
+    "category": "practice",
+    "aliases": [
+      "budget management",
+      "financial planning"
+    ]
+  },
+  "Financial Analysis": {
+    "category": "practice",
+    "aliases": [
+      "financial modeling",
+      "financial modelling",
+      "forecasting"
+    ]
+  },
+  "Accounting": {
+    "category": "practice",
+    "aliases": [
+      "gaap",
+      "accounts payable",
+      "accounts receivable",
+      "bookkeeping",
+      "reconciliation"
+    ]
+  },
+  "Customer Service": {
+    "category": "practice",
+    "aliases": [
+      "customer support",
+      "client service"
+    ]
+  },
+  "Sales": {
+    "category": "practice",
+    "aliases": [
+      "business development",
+      "lead generation"
+    ]
+  },
+  "Recruiting": {
+    "category": "practice",
+    "aliases": [
+      "talent acquisition",
+      "sourcing candidates"
+    ]
+  },
+  "Compliance": {
+    "category": "practice",
+    "aliases": [
+      "regulatory compliance",
+      "hipaa",
+      "sox",
+      "gdpr"
+    ]
+  },
+  "Technical Writing": {
+    "category": "practice",
+    "aliases": [
+      "documentation"
+    ]
+  },
+  "Research": {
+    "category": "practice",
+    "aliases": [
+      "market research",
+      "user research",
+      "qualitative research"
+    ]
+  },
+  "Process Improvement": {
+    "category": "practice",
+    "aliases": [
+      "six sigma",
+      "continuous improvement",
+      "lean six sigma"
+    ]
+  },
+  "Communication": {
+    "category": "soft",
+    "aliases": [
+      "communication skills",
+      "written communication",
+      "verbal communication",
+      "strong communicator",
+      "excellent communication"
+    ]
+  },
+  "Teamwork": {
+    "category": "soft",
+    "aliases": [
+      "collaboration",
+      "collaborate",
+      "team player",
+      "cross-functional",
+      "work collaboratively"
+    ]
+  },
+  "Leadership": {
+    "category": "soft",
+    "aliases": [
+      "lead teams",
+      "team lead",
+      "leading teams",
+      "mentoring",
+      "mentorship"
+    ]
+  },
+  "Problem Solving": {
+    "category": "soft",
+    "aliases": [
+      "problem-solving",
+      "analytical skills",
+      "analytical thinking",
+      "critical thinking"
+    ]
+  },
+  "Time Management": {
+    "category": "soft",
+    "aliases": [
+      "prioritization",
+      "prioritize",
+      "multitasking",
+      "meet deadlines"
+    ]
+  },
+  "Attention to Detail": {
+    "category": "soft",
+    "aliases": [
+      "detail-oriented",
+      "detail oriented"
+    ]
+  },
+  "Adaptability": {
+    "category": "soft",
+    "aliases": [
+      "fast-paced",
+      "adapt quickly",
+      "adapt to change"
+    ]
+  },
+  "Presentation Skills": {
+    "category": "soft",
+    "aliases": [
+      "presentations",
+      "public speaking",
+      "present findings",
+      "stakeholder communication"
+    ]
+  },
+  "Stakeholder Management": {
+    "category": "soft",
+    "aliases": [
+      "stakeholders",
+      "client management"
+    ]
+  },
+  "PMP": {
+    "category": "certification",
+    "aliases": [
+      "project management professional"
+    ]
+  },
+  "CPA": {
+    "category": "certification",
+    "aliases": [
+      "certified public accountant"
+    ]
+  },
+  "AWS Certification": {
+    "category": "certification",
+    "aliases": [
+      "aws certified",
+      "aws solutions architect"
+    ]
+  },
+  "CompTIA": {
+    "category": "certification",
+    "aliases": [
+      "comptia a+",
+      "comptia security+",
+      "security+",
+      "network+"
+    ]
+  },
+  "CISSP": {
+    "category": "certification",
+    "aliases": []
+  },
+  "Scrum Master": {
+    "category": "certification",
+    "aliases": [
+      "csm",
+      "certified scrum master"
+    ]
+  },
+  "Bachelor's Degree": {
+    "category": "education",
+    "aliases": [
+      "bachelor's",
+      "bachelors",
+      "bachelor of science",
+      "bachelor of arts",
+      "b.s.",
+      "b.a.",
+      "bs degree",
+      "ba degree",
+      "undergraduate degree",
+      "4-year degree"
+    ]
+  },
+  "Master's Degree": {
+    "category": "education",
+    "aliases": [
+      "master's",
+      "masters",
+      "m.s.",
+      "m.a.",
+      "mba",
+      "graduate degree"
+    ]
+  },
+  "Computer Science": {
+    "category": "education",
+    "aliases": [
+      "cs degree",
+      "computer engineering",
+      "software engineering degree"
+    ]
+  },
+  "Healthcare": {
+    "category": "domain",
+    "aliases": [
+      "clinical",
+      "patient care",
+      "ehr",
+      "electronic health records"
+    ]
+  },
+  "E-commerce": {
+    "category": "domain",
+    "aliases": [
+      "ecommerce",
+      "e commerce",
+      "online retail"
+    ]
+  },
+  "Fintech": {
+    "category": "domain",
+    "aliases": [
+      "financial services",
+      "banking"
+    ]
+  },
+  "SaaS": {
+    "category": "domain",
+    "aliases": [
+      "software as a service",
+      "b2b software"
+    ]
+  },
+  "Spring Framework": {
+    "category": "framework",
+    "aliases": [
+      "spring boot",
+      "springboot",
+      "spring mvc",
+      "spring framework"
+    ]
+  },
+  "Express.js": {
+    "category": "framework",
+    "aliases": [
+      "expressjs"
+    ],
+    "case_sensitive": false
+  },
+  "Spreadsheets": {
+    "category": "tool",
+    "aliases": [
+      "spreadsheet",
+      "pivot tables",
+      "pivot table",
+      "vlookup"
+    ]
+  }
+}

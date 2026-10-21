@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Search Helper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">Job Search<br>Helper</div>
+      <nav id="nav">
+        <button data-view="setup">1 · Resume &amp; search</button>
+        <button data-view="listings">2 · Listings</button>
+        <button data-view="roles">3 · Role profiles</button>
+        <button data-view="terms">4 · New terms <span id="terms-badge" class="badge hidden"></span></button>
+      </nav>
+      <div class="side-foot">
+        <div id="status" class="muted small"></div>
+      </div>
+    </aside>
+    <main id="view" tabindex="-1" aria-live="polite"></main>
+  </div>
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
