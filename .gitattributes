@@ -1,0 +1,4 @@
+# Never convert line endings in these files (it would corrupt them)
+*.pdf binary
+*.docx binary
+*.onnx binary
