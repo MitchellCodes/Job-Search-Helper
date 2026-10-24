@@ -18,8 +18,8 @@ def run_window() -> None:
     import webview
 
     from jobhelper.api import Api
-    from jobhelper.browser.clipboard import read_clipboard
-    from jobhelper.browser.pane import CompanionBrowser
+    from jobhelper.browser.clipboard import read_clipboard, write_clipboard
+    from jobhelper.browser.pane import CompanionBrowser, enable_context_menu
 
     browser = CompanionBrowser()
     holder = {}
@@ -29,10 +29,12 @@ def run_window() -> None:
             webview.OPEN_DIALOG, file_types=("Resume files (*.pdf;*.docx)", "All files (*.*)"))
         return result[0] if result else None
 
-    api = Api(browser=browser, clipboard=read_clipboard, file_picker=pick_file)
+    api = Api(browser=browser, clipboard=read_clipboard, file_picker=pick_file, clipboard_write=write_clipboard)
+    # text_select=True so text in the app (scores, listing text, addresses) can be selected and copied
     window = webview.create_window("Job Search Helper", str(WEB_INDEX), js_api=api, width=1000, height=760,
-                                   min_size=(760, 560))
+                                   min_size=(760, 560), text_select=True)
     holder["window"] = window
+    window.events.loaded += lambda: enable_context_menu(window)
     browser.attach(window)
     window.events.closed += browser.close
     smoke = "--smoke" in sys.argv

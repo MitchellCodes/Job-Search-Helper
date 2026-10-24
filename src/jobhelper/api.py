@@ -26,10 +26,12 @@ def _safe(fn):
 
 
 class Api:
-    def __init__(self, helper: JobHelper | None = None, browser=None, clipboard=None, file_picker=None):
+    def __init__(self, helper: JobHelper | None = None, browser=None, clipboard=None, file_picker=None,
+                 clipboard_write=None):
         self._helper = helper or JobHelper()
         self._browser = browser
         self._clipboard = clipboard
+        self._clipboard_write = clipboard_write
         self._file_picker = file_picker      # () -> path | None   (native dialog, set by app.py)
         self._lock = threading.RLock()
 
@@ -97,15 +99,30 @@ class Api:
         return results
 
     @_safe
-    def import_clipboard(self):
+    def import_clipboard(self, url: str | None = None):
+        """Import the text the user copied. `url` is the address shown in the app (the user may have
+        edited it); if it's empty the job-site window's current address is used."""
         if self._clipboard is None:
             raise ValueError("Clipboard access isn't available here.")
         text = self._clipboard()
         if not text.strip():
             raise ValueError("The clipboard is empty. In the job site window, select the listing text "
-                             "and copy it (Ctrl+A, then Ctrl+C), then try again.")
-        url = self._browser.current_url() if self._browser else None
+                             "(Ctrl+A selects the whole page) and copy it with Ctrl+C, then try again.")
+        url = (url or "").strip() or (self._browser.current_url() if self._browser else None)
         return self._helper.import_listing(text, url)
+
+    @_safe
+    def browser_status(self):
+        """Is the job-site window open, and which address is it showing right now?"""
+        if self._browser is None:
+            return {"available": False, "open": False, "url": None}
+        return {"available": True, "open": self._browser.is_open(), "url": self._browser.current_url()}
+
+    @_safe
+    def copy_text(self, text: str):
+        if self._clipboard_write is None:
+            raise ValueError("Copying isn't available here; select the text and press Ctrl+C.")
+        self._clipboard_write(str(text))
 
     # -- companion browser ---------------------------------------------------------------
     @_safe

@@ -673,7 +673,7 @@
     "aliases": [
       "financial modeling",
       "financial modelling",
-      "forecasting"
+      "financial forecasting"
     ]
   },
   "Accounting": {
@@ -719,7 +719,8 @@
   "Technical Writing": {
     "category": "practice",
     "aliases": [
-      "documentation"
+      "technical documentation",
+      "technical writer"
     ]
   },
   "Research": {

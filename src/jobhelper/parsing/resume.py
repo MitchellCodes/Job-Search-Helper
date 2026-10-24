@@ -23,19 +23,35 @@ EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 PHONE_RE = re.compile(r"(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}")
 
 
+def _text_of(element) -> str:
+    """Text of a Word element in document order, keeping tabs and line breaks.
+
+    Resumes put dates after a right-aligned tab ("Seattle, WA<TAB>Jan 2024 - Present"); reading
+    only the <w:t> text would glue them together ("WAJan 2024").
+    """
+    parts = []
+    # Only look inside runs: a <w:tab> in the paragraph settings merely defines a tab stop.
+    for run in element.iter(f"{W}r"):
+        for node in run:
+            if node.tag == f"{W}t":
+                parts.append(node.text or "")
+            elif node.tag == f"{W}tab":
+                parts.append("\t")
+            elif node.tag in (f"{W}br", f"{W}cr"):
+                parts.append("\n")
+    return "".join(parts)
+
+
 def read_docx(path) -> tuple[str, dict]:
     """Return (text, format_flags). A DOCX is a zip of XML, so no extra library is needed."""
     with zipfile.ZipFile(path) as z:
         names = z.namelist()
         root = ET.fromstring(z.read("word/document.xml"))
-        paragraphs = []
-        for p in root.iter(f"{W}p"):
-            paragraphs.append("".join(t.text or "" for t in p.iter(f"{W}t")))
+        paragraphs = [_text_of(p) for p in root.iter(f"{W}p")]
         header_footer_text = ""
         for n in names:
             if re.match(r"word/(header|footer)\d*\.xml", n):
-                hroot = ET.fromstring(z.read(n))
-                header_footer_text += "".join(t.text or "" for t in hroot.iter(f"{W}t"))
+                header_footer_text += _text_of(ET.fromstring(z.read(n)))
         cols = [int(c.get(f"{W}num", "1")) for c in root.iter(f"{W}cols")]
         flags = {
             "format": "docx",
@@ -102,11 +118,28 @@ def extract_contact(text: str) -> dict:
     return {"email": email.group(0) if email else None, "phone": phone.group(0) if phone else None}
 
 
+def _split_outside_parens(line: str) -> list[str]:
+    """Split on , ; | and bullets, but keep "SQL (PostgreSQL, MySQL)" together."""
+    parts, depth, current = [], 0, []
+    for ch in line:
+        if ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth = max(0, depth - 1)
+        if depth == 0 and ch in ",;|•·":
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+    parts.append("".join(current))
+    return parts
+
+
 def extract_skill_items(sections: dict) -> list[str]:
     items = []
     for line in sections.get("skills", []):
         line = line.split(":", 1)[-1]
-        for part in re.split(r"[,;|•·]", line):
+        for part in _split_outside_parens(line):
             part = part.strip(" -•\t")
             if part:
                 items.append(part)
@@ -125,26 +158,43 @@ def parse_resume_file(path) -> dict:
     }
 
 
+_MONTHS = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
 _MONTH = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?"
 _RANGE_RE = re.compile(
-    rf"(?:{_MONTH}\s+)?((?:19|20)\d{{2}})\s*(?:-|–|—|to)\s*(present|current|now|(?:{_MONTH}\s+)?((?:19|20)\d{{2}}))",
+    rf"(?:(?P<m1>{_MONTH})\s+)?(?P<y1>(?:19|20)\d{{2}})\s*(?:-|–|—|to)\s*"
+    rf"(?:(?P<now>present|current|now)|(?:(?P<m2>{_MONTH})\s+)?(?P<y2>(?:19|20)\d{{2}}))",
     re.I,
 )
 
 
-def estimate_years_experience(sections: dict, now_year: int | None = None) -> float | None:
-    """Rough total years of work from date ranges in the experience section (overlaps merged)."""
+def _month_number(name: str | None) -> int | None:
+    return _MONTHS.get(name[:3].lower()) if name else None
+
+
+def estimate_years_experience(sections: dict, now: tuple[int, int] | None = None) -> float | None:
+    """Total years of work from date ranges in the experience section (overlaps merged).
+
+    Uses months when given ("Jun 2022 - Dec 2023" = 1.5 years); a bare year counts from the
+    start of that year. `now` is (year, month) for "Present"; defaults to today.
+    """
     import datetime
 
-    now_year = now_year or datetime.date.today().year
+    today = datetime.date.today()
+    now_year, now_month = now or (today.year, today.month)
     lines = sections.get("experience") or []
     intervals = []
     for line in lines:
         for m in _RANGE_RE.finditer(line):
-            start = int(m.group(1))
-            end = now_year if m.group(2).lower() in ("present", "current", "now") else int(m.group(3))
+            m1 = _month_number(m.group("m1"))
+            start = int(m.group("y1")) + ((m1 - 1) / 12 if m1 else 0)
+            if m.group("now"):
+                end = now_year + now_month / 12
+            else:
+                m2 = _month_number(m.group("m2"))
+                end = int(m.group("y2")) + (m2 / 12 if m2 else 0)    # end of the named month
             if end >= start:
-                intervals.append((start, max(end, start + 0.5)))
+                intervals.append((start, max(end, start + 0.25)))
     if not intervals:
         return None
     intervals.sort()

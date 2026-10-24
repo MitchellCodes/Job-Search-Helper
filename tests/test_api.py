@@ -14,14 +14,18 @@ from test_parsing_storage import make_docx, paragraphs
 
 
 class FakeBrowser:
-    def __init__(self):
+    def __init__(self, url="https://example.com/jobs/1", open_=True):
         self.opened, self.actions = [], []
+        self.url, self._open = url, open_
 
     def open(self, url):
         self.opened.append(url)
 
+    def is_open(self):
+        return self._open
+
     def current_url(self):
-        return "https://example.com/jobs/1"
+        return self.url if self._open else None
 
     def back(self):
         self.actions.append("back")
@@ -70,6 +74,34 @@ def test_end_to_end_flow(api):
     assert api.browser_open("indeed.com")["ok"] and api._browser.opened == ["indeed.com"]
     assert api.browser_action("back")["ok"] and api._browser.actions == ["back"]
     assert api.browser_action("explode")["ok"] is False
+
+
+def test_browser_status_reports_open_window_and_address(tmp_path):
+    helper = JobHelper(db.connect(tmp_path / "s.sqlite"))
+    assert Api(helper)._browser is None
+    assert Api(helper).browser_status()["data"] == {"available": False, "open": False, "url": None}
+    closed = Api(helper, browser=FakeBrowser(open_=False)).browser_status()["data"]
+    assert closed == {"available": True, "open": False, "url": None}
+    shown = Api(helper, browser=FakeBrowser("https://jobs.example.com/view/42")).browser_status()["data"]
+    assert shown == {"available": True, "open": True, "url": "https://jobs.example.com/view/42"}
+
+
+def test_import_uses_the_address_shown_in_the_app_when_given(api):
+    assert api.choose_resume()["ok"]            # the detail view scores the listing, which needs a resume
+    api.set_search(["Data Analyst"], ["entry"])
+    edited = api.import_clipboard("https://careers.example.com/analyst-7")["data"]       # user-edited address
+    assert api.listing_detail(edited["id"])["data"]["listing"]["url"] == "https://careers.example.com/analyst-7"
+    api._clipboard = lambda: ANALYST.replace("Acme Analytics", "Other Co")
+    fallback = api.import_clipboard("   ")["data"]                                         # blank -> window's address
+    assert api.listing_detail(fallback["id"])["data"]["listing"]["url"] == "https://example.com/jobs/1"
+
+
+def test_copy_text_uses_clipboard_writer(tmp_path):
+    copied = []
+    a = Api(JobHelper(db.connect(tmp_path / "c.sqlite")), clipboard_write=copied.append)
+    assert a.copy_text("https://example.com/x")["ok"] and copied == ["https://example.com/x"]
+    nowriter = Api(JobHelper(db.connect(tmp_path / "d.sqlite")))
+    assert nowriter.copy_text("x")["ok"] is False
 
 
 def test_empty_clipboard_gives_helpful_message(tmp_path):

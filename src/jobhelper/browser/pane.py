@@ -33,6 +33,26 @@ def normalise_url(url: str) -> str:
     return url
 
 
+def enable_context_menu(window) -> bool:
+    """Turn on the right-click menu (Copy, Copy link address, Back...) for one window.
+
+    pywebview only enables it in debug mode, which would also switch on developer tools, so
+    the WebView2 setting is flipped directly. Windows (WebView2) only; returns False elsewhere.
+    """
+    try:
+        from System import Action
+
+        native = window.native
+
+        def apply():
+            native.webview.CoreWebView2.Settings.AreDefaultContextMenusEnabled = True
+
+        native.webview.Invoke(Action(apply))   # WebView2 settings must be changed on the UI thread
+        return True
+    except Exception:  # noqa: BLE001 - other platforms / not ready yet: selection and Ctrl+C still work
+        return False
+
+
 class CompanionBrowser:
     def __init__(self):
         self.window = None
@@ -52,8 +72,10 @@ class CompanionBrowser:
             self.window.load_url(url)
             return
         x, y, w, h = self._dock_rect()
-        self.window = webview.create_window("Job site", url, x=x, y=y, width=w, height=h)
+        # text_select=True: without it pywebview blocks selecting text, so nothing can be copied
+        self.window = webview.create_window("Job site", url, x=x, y=y, width=w, height=h, text_select=True)
         self.window.events.closed += self._on_closed
+        self.window.events.loaded += lambda: enable_context_menu(self.window) if self.window else None
 
     def _on_closed(self) -> None:
         self.window = None
@@ -82,8 +104,16 @@ class CompanionBrowser:
         if self._alive():
             self.window.evaluate_js("location.reload()")
 
+    def is_open(self) -> bool:
+        return self._alive()
+
     def current_url(self) -> str | None:
-        return self.window.get_current_url() if self._alive() else None
+        if not self._alive():
+            return None
+        try:
+            return self.window.get_current_url()
+        except Exception:  # noqa: BLE001 - window closing or still loading
+            return None
 
     def close(self) -> None:
         if self._alive():

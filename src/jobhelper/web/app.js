@@ -154,12 +154,19 @@ async function renderListings() {
       <div class="row">
         <button class="btn small" data-b="back" title="Back">◀</button><button class="btn small" data-b="forward" title="Forward">▶</button>
         <button class="btn small" data-b="reload">Reload</button><button class="btn small" data-b="dock">Dock beside app</button>
-        <input type="text" id="addr" class="grow" placeholder="Paste a job-site address, e.g. indeed.com">
+        <input type="text" id="addr" class="grow" placeholder="Go to a job-site address, e.g. indeed.com">
         <button class="btn" id="go">Open</button>
       </div>
       <div class="row" style="margin-top:12px">
+        <label class="field grow">Address of the page you're viewing (saved with the listing; edit it if needed)
+          <input type="text" id="live" placeholder="Opens here once you've opened a page above" spellcheck="false"></label>
+        <button class="btn" id="copyurl" style="align-self:flex-end">Copy address</button>
+      </div>
+      <div id="live-note" class="muted small" style="margin-top:4px"></div>
+      <div class="row" style="margin-top:12px">
         <button class="btn primary" id="clip">Import from clipboard</button>
-        <span class="muted small">Reads the clipboard only when you click this.</span>
+        <span class="muted small">In the job-site window select the listing text (Ctrl+A selects the whole page), press Ctrl+C, then click here.
+          Right-click a link for “Copy link address”. The clipboard is read only when you click.</span>
       </div>
       <details style="margin-top:12px"><summary>Or paste listing text here</summary>
         <div style="margin-top:10px"><textarea id="paste" placeholder="Paste a job posting (or several separated by a line containing ====)"></textarea></div>
@@ -178,9 +185,34 @@ async function renderListings() {
     </section>`;
   document.querySelectorAll("[data-b]").forEach((b) => (b.onclick = () => act(() => call("browser_action", b.dataset.b))));
   $("#go").onclick = () => act(async () => { await call("browser_open", $("#addr").value); });
+  // live address of the job-site window: shown here, copyable, and saved with the next import
+  let liveDirty = false;
+  $("#live").addEventListener("input", () => { liveDirty = true; });
+  clearInterval(window.__liveTimer);
+  const pollAddress = async () => {
+    const field = $("#live");
+    if (!field) return clearInterval(window.__liveTimer);       // user left this screen
+    try {
+      const st = await call("browser_status");
+      $("#live-note").textContent = !st.available ? "The job-site window isn't available in this mode; paste the listing text and its address below."
+        : !st.open ? "The job-site window isn't open. Use “Open” above, or the search links on step 1." : "";
+      if (st.open && st.url && !liveDirty && document.activeElement !== field) field.value = st.url;
+    } catch (_) { /* polling is best-effort */ }
+  };
+  pollAddress();
+  window.__liveTimer = setInterval(pollAddress, 1200);
+  $("#copyurl").onclick = () => act(async () => {
+    const value = $("#live").value.trim();
+    if (!value) throw new Error("There's no address to copy yet. Open a page in the job-site window first.");
+    await call("copy_text", value);
+    toast("Address copied.");
+  });
   $("#clip").onclick = () => act(async () => {
-    const r = await call("import_clipboard");
-    toast(r.created ? `Imported: ${r.title || "listing"}${r.company ? " · " + r.company : ""}` : "Already imported.");
+    const address = $("#live").value.trim();
+    const r = await call("import_clipboard", address);
+    toast((r.created ? `Imported: ${r.title || "listing"}${r.company ? " · " + r.company : ""}` : "Already imported.")
+      + (address ? " Address saved." : ""));
+    liveDirty = false;
     loadRank();
   });
   $("#add").onclick = () => act(async () => {
@@ -221,7 +253,8 @@ async function renderDetail(id) {
       <div class="ringwrap"><div class="score ${scoreClass(s.total)}" style="font-size:34px;padding:8px 18px">${s.total == null ? "—" : Math.round(s.total)}</div><div class="ringlabel">Overall fit (0–100)</div></div>
       <div class="grow"><h1 style="margin-bottom:2px">${esc(p.title || "Untitled listing")}</h1>
         <div class="muted">${esc(p.company || "")}${p.location ? " · " + esc(p.location) : ""}</div>
-        <div class="facts">${[p.level && "Level: " + levelName(p.level), p.years_required != null && p.years_required + "+ yrs asked", p.remote, p.pay && p.pay.text, l.url && "Has address"]
+        ${l.url ? `<div class="small muted" style="word-break:break-all;margin-top:4px">${esc(l.url)} <button class="btn small" id="copy-listing-url">Copy address</button></div>` : ""}
+        <div class="facts">${[p.level && "Level: " + levelName(p.level), p.years_required != null && p.years_required + "+ yrs asked", p.remote, p.pay && p.pay.text]
           .filter(Boolean).map((f) => `<span class="fact">${esc(f)}</span>`).join("")}</div>
         <div class="row" style="margin-top:12px">
           <label class="field">Status<select id="fb"><option value="">—</option>${["liked", "applied", "interview", "rejected"].map((f) => `<option ${l.feedback === f ? "selected" : ""}>${f}</option>`).join("")}</select></label>
@@ -263,6 +296,7 @@ async function renderDetail(id) {
     toast(title ? "Role tag saved." : "Listing is now left out of role profiles.");
   });
   if ($("#openurl")) $("#openurl").onclick = () => act(() => call("browser_open", l.url));
+  if ($("#copy-listing-url")) $("#copy-listing-url").onclick = () => act(async () => { await call("copy_text", l.url); toast("Address copied."); });
   $("#del").onclick = () => { if (confirm("Delete this listing?")) act(async () => { await call("delete_listing", id); show("listings"); }); };
 }
 

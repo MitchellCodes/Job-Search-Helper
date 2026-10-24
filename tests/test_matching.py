@@ -111,8 +111,30 @@ def test_mining_finds_recurring_unknown_terms_only(vocab):
 # ---- resume years ---------------------------------------------------------------
 def test_years_estimate_merges_overlaps():
     sections = {"experience": ["Dev 2018 - 2020", "Dev 2019 - 2022", "Lead Mar 2023 - Present"]}
-    assert estimate_years_experience(sections, now_year=2026) == 7.0   # 2018-2022 (4) + 2023-2026 (3)
+    # bare years count from Jan 1: 2018-2022 = 4.0, plus Mar 2023 to Jun 2026 = 3.33
+    assert estimate_years_experience(sections, now=(2026, 6)) == 7.3
     assert estimate_years_experience({"experience": ["no dates"]}) is None
+
+
+def test_years_estimate_uses_months():
+    sections = {"experience": ["Analyst, Co, Seattle, WA\tJan 2024 – Present",
+                               "Junior Analyst, Co\tJun 2022 – Dec 2023",
+                               "Intern, Co\tJun 2021 – Aug 2021"]}
+    # 2.5 (Jan 2024 - Jun 2026) + 1.58 (Jun 2022 - Dec 2023 inclusive) + 0.25 (3-month internship)
+    assert estimate_years_experience(sections, now=(2026, 6)) == 4.3
+
+
+def test_skill_items_keep_parenthetical_groups_together():
+    sections = {"skills": ["Languages: SQL (PostgreSQL, MySQL), Python (pandas, NumPy), R",
+                           "Tools: Git, Jira | Confluence"]}
+    assert extract_skill_items(sections) == [
+        "SQL (PostgreSQL, MySQL)", "Python (pandas, NumPy)", "R", "Git", "Jira", "Confluence"]
+
+
+def test_vocabulary_does_not_overmatch_generic_words(vocab):
+    found = vocab.find("Maintained shipment forecasting models and wrote process documentation")
+    assert "Financial Analysis" not in found and "Technical Writing" not in found
+    assert "Technical Writing" in vocab.find("Strong technical documentation skills")
 
 
 # ---- scoring (keyword layer, no model) --------------------------------------------------

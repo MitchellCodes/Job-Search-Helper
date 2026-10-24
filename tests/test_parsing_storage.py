@@ -78,6 +78,17 @@ def test_docx_text_and_format_flags(tmp_path):
     assert parsed["contact"]["email"] == "jane@example.com"
 
 
+def test_docx_keeps_tabs_between_title_and_dates(tmp_path):
+    path = tmp_path / "tabs.docx"
+    # the right-aligned tab stop is *defined* in pPr (must not count) and *used* inside a run (must count)
+    para = ('<w:p><w:pPr><w:tabs><w:tab w:val="right" w:pos="10080"/></w:tabs></w:pPr>'
+            '<w:r><w:t>Data Analyst, Acme, Seattle, WA</w:t></w:r><w:r><w:tab/></w:r>'
+            '<w:r><w:t>Jan 2024 - Present</w:t></w:r></w:p>')
+    make_docx(path, para)
+    parsed = parse_resume_file(path)
+    assert parsed["raw_text"] == "Data Analyst, Acme, Seattle, WA\tJan 2024 - Present"
+
+
 def test_listing_parse():
     p = parse_listing(LISTING)
     assert p["title"] == "Junior Data Analyst"
