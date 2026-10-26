@@ -7,3 +7,9 @@ dist/
 *.spec
 .pytest_cache/
 *.egg-info/
+
+# Never commit sign-in details or local tool settings (Claude Code keeps its own login in ~/.claude, outside this folder)
+.claude/
+.env
+.env.*
+.credentials.json
