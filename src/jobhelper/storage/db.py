@@ -41,6 +41,14 @@ CREATE TABLE IF NOT EXISTS scores (
     PRIMARY KEY (listing_id, resume_id)
 );
 CREATE TABLE IF NOT EXISTS embeddings (text_hash TEXT PRIMARY KEY, vec BLOB NOT NULL);
+CREATE TABLE IF NOT EXISTS tailorings (
+    id INTEGER PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+    result_json TEXT NOT NULL,        -- Claude's checked suggestions, personal details restored
+    sent_text TEXT NOT NULL,          -- exactly the redacted resume text that was sent (audit trail)
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 """
 

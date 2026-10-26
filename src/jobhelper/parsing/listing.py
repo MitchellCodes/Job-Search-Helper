@@ -1,4 +1,4 @@
-"""Turn pasted/clipboard/file text of a job posting into a structured record.
+"""Turn the pasted text of a job posting into a structured record.
 
 The text always comes from the user. This module never fetches anything.
 """

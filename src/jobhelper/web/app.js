@@ -27,7 +27,7 @@ let toastTimer;
 function toast(msg, isError = false) {
   const t = $("#toast");
   t.textContent = msg; t.className = "toast" + (isError ? " error" : "");
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hidden"), isError ? 7000 : 3500);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hidden"), isError ? 9000 : 4500);
 }
 async function act(fn) { try { return await fn(); } catch (e) { toast(e.message, true); } }
 
@@ -85,9 +85,12 @@ document.querySelectorAll("#nav button").forEach((b) => b.addEventListener("clic
 async function renderSetup() {
   const s = await call("state");
   const search = s.search;
+  const claudeNote = s.claude.available
+    ? `<p class="ok-note">Claude Code is installed (${esc(s.claude.version || "version unknown")}). Tailoring runs through it on your own Claude sign-in, with no API key.</p>`
+    : `<p class="warn-note">Claude Code wasn't found on this computer. Everything except tailoring works without it. To tailor resumes, install Claude Code (claude.com/claude-code), run <code>claude</code> once in a terminal and sign in.</p>`;
   $("#view").innerHTML = `
     <h1>Resume &amp; search</h1>
-    <p class="sub">Upload your resume once, then tell the app which role and level you're searching for. Every listing you import is tagged with this search so it can learn what that role typically asks for.</p>
+    <p class="sub">Upload your resume once, then tell the app which role and level you're searching for. Every listing you add is tagged with this search so the app can learn what that role typically asks for.</p>
     <div class="grid2">
       <section class="card">
         <h2>Your resume</h2>
@@ -112,11 +115,11 @@ async function renderSetup() {
       </section>
     </div>
     <section class="card">
-      <h2>Find listings on job sites</h2>
-      <p class="muted" style="margin-top:0">These open each site's own search page in the job-site window. You browse and choose listings yourself; the app never reads those pages.</p>
-      <div class="row"><label class="field grow">Location (optional)<input type="text" id="loc" placeholder="Seattle, WA"></label>
-        <button class="btn" id="links">Show search links</button></div>
-      <div id="link-out" style="margin-top:12px"></div>
+      <h2>Tailoring your resume with Claude</h2>
+      ${claudeNote}
+      <p class="muted" style="margin-bottom:0">Before anything is sent, your name, email, phone, locations, profile links, employers, schools, and project and
+        certificate names are replaced with placeholders. You review the exact text first, and the placeholders are swapped back
+        after Claude answers. Your contact block is never sent at all.</p>
     </section>`;
   $("#pick").onclick = () => act(async () => { const r = await call("choose_resume"); if (r) { toast("Resume imported."); show("setup"); } });
   $("#save-search").onclick = () => act(async () => {
@@ -132,13 +135,6 @@ async function renderSetup() {
       <div class="row"><button class="btn primary" id="rsave">Save corrections</button></div>`;
     $("#rsave").onclick = () => act(async () => { await call("save_resume_text", r.id, $("#rtext").value); toast("Saved."); show("setup"); });
   });
-  $("#links").onclick = () => act(async () => {
-    const links = await call("search_links", $("#loc").value);
-    $("#link-out").innerHTML = Object.entries(links).map(([title, sites]) => `<div style="margin-bottom:10px"><strong>${esc(title)}</strong>
-      <div class="row" style="margin-top:6px">${Object.entries(sites).map(([site, url]) =>
-        `<button class="btn small" data-url="${esc(url)}">${esc(site)}</button>`).join("")}</div></div>`).join("");
-    document.querySelectorAll("#link-out button").forEach((b) => (b.onclick = () => act(async () => { await call("browser_open", b.dataset.url); toast("Opened in the job-site window."); })));
-  });
 }
 
 // ---- 2. Listings --------------------------------------------------------------------------------------------------
@@ -147,31 +143,14 @@ async function renderListings() {
   const search = s.search;
   $("#view").innerHTML = `
     <h1>Listings</h1>
-    <p class="sub">Open a job site in the job-site window, find a listing, select its text (Ctrl+A) and copy it (Ctrl+C), then import it here. Imports are tagged with
+    <p class="sub">Find a listing on any job site, select the posting text, copy it (Ctrl+C) and paste it below. Listings you add are tagged with
       <strong>${search.titles.length ? esc(search.titles.join(" / ")) : "no search yet"}</strong>${search.levels.length ? " · " + esc(search.levels.map(levelName).join(", ")) : ""}.</p>
     <section class="card">
-      <h2>Job-site window</h2>
-      <div class="row">
-        <button class="btn small" data-b="back" title="Back">◀</button><button class="btn small" data-b="forward" title="Forward">▶</button>
-        <button class="btn small" data-b="reload">Reload</button><button class="btn small" data-b="dock">Dock beside app</button>
-        <input type="text" id="addr" class="grow" placeholder="Go to a job-site address, e.g. indeed.com">
-        <button class="btn" id="go">Open</button>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <label class="field grow">Address of the page you're viewing (saved with the listing; edit it if needed)
-          <input type="text" id="live" placeholder="Opens here once you've opened a page above" spellcheck="false"></label>
-        <button class="btn" id="copyurl" style="align-self:flex-end">Copy address</button>
-      </div>
-      <div id="live-note" class="muted small" style="margin-top:4px"></div>
-      <div class="row" style="margin-top:12px">
-        <button class="btn primary" id="clip">Import from clipboard</button>
-        <span class="muted small">In the job-site window select the listing text (Ctrl+A selects the whole page), press Ctrl+C, then click here.
-          Right-click a link for “Copy link address”. The clipboard is read only when you click.</span>
-      </div>
-      <details style="margin-top:12px"><summary>Or paste listing text here</summary>
-        <div style="margin-top:10px"><textarea id="paste" placeholder="Paste a job posting (or several separated by a line containing ====)"></textarea></div>
-        <div class="row" style="margin-top:8px"><input type="text" id="purl" class="grow" placeholder="Listing address (optional)">
-          <button class="btn" id="add">Add listing(s)</button></div></details>
+      <h2>Add a listing</h2>
+      <textarea id="paste" style="min-height:150px" placeholder="Paste the job posting here. To add several at once, put a line containing ==== between them."></textarea>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="purl" class="grow" placeholder="Listing address (optional, to find it again)">
+        <button class="btn primary" id="add">Add listing(s)</button></div>
     </section>
     <section class="card">
       <div class="row" style="margin-bottom:10px">
@@ -183,42 +162,10 @@ async function renderListings() {
       </div>
       <div id="rank"></div>
     </section>`;
-  document.querySelectorAll("[data-b]").forEach((b) => (b.onclick = () => act(() => call("browser_action", b.dataset.b))));
-  $("#go").onclick = () => act(async () => { await call("browser_open", $("#addr").value); });
-  // live address of the job-site window: shown here, copyable, and saved with the next import
-  let liveDirty = false;
-  $("#live").addEventListener("input", () => { liveDirty = true; });
-  clearInterval(window.__liveTimer);
-  const pollAddress = async () => {
-    const field = $("#live");
-    if (!field) return clearInterval(window.__liveTimer);       // user left this screen
-    try {
-      const st = await call("browser_status");
-      $("#live-note").textContent = !st.available ? "The job-site window isn't available in this mode; paste the listing text and its address below."
-        : !st.open ? "The job-site window isn't open. Use “Open” above, or the search links on step 1." : "";
-      if (st.open && st.url && !liveDirty && document.activeElement !== field) field.value = st.url;
-    } catch (_) { /* polling is best-effort */ }
-  };
-  pollAddress();
-  window.__liveTimer = setInterval(pollAddress, 1200);
-  $("#copyurl").onclick = () => act(async () => {
-    const value = $("#live").value.trim();
-    if (!value) throw new Error("There's no address to copy yet. Open a page in the job-site window first.");
-    await call("copy_text", value);
-    toast("Address copied.");
-  });
-  $("#clip").onclick = () => act(async () => {
-    const address = $("#live").value.trim();
-    const r = await call("import_clipboard", address);
-    toast((r.created ? `Imported: ${r.title || "listing"}${r.company ? " · " + r.company : ""}` : "Already imported.")
-      + (address ? " Address saved." : ""));
-    liveDirty = false;
-    loadRank();
-  });
   $("#add").onclick = () => act(async () => {
     const text = $("#paste").value, url = $("#purl").value;
-    if (/^\s*====\s*$/m.test(text)) { const rs = await call("import_bulk", text); toast(`Imported ${rs.filter((r) => r.created).length} of ${rs.length} listings.`); }
-    else { const r = await call("import_text", text, url); toast(r.created ? "Imported." : "Already imported."); }
+    if (/^\s*====\s*$/m.test(text)) { const rs = await call("import_bulk", text); toast(`Added ${rs.filter((r) => r.created).length} of ${rs.length} listings.`); }
+    else { const r = await call("import_text", text, url); toast(r.created ? `Added: ${r.title || "listing"}${r.company ? " · " + r.company : ""}` : "That listing was already added."); }
     $("#paste").value = ""; $("#purl").value = ""; loadRank();
   });
   ["f-min", "f-level", "f-remote", "f-excl"].forEach((id) => $("#" + id).addEventListener("change", loadRank));
@@ -231,7 +178,7 @@ async function loadRank() {
   const rows = await act(() => call("ranked", $("#f-min").value, $("#f-level").value, $("#f-remote").value, excl)) || [];
   const s = await call("state");
   if (!s.resume) { box.innerHTML = '<div class="empty">Upload your resume first (step 1) so listings can be scored.</div>'; return; }
-  if (!rows.length) { box.innerHTML = '<div class="empty">No listings yet. Import one above.</div>'; return; }
+  if (!rows.length) { box.innerHTML = '<div class="empty">No listings yet. Paste one above.</div>'; return; }
   box.innerHTML = `<table><thead><tr><th>Fit</th><th>Listing</th><th>Required skills covered</th><th>Level</th><th>Work type</th><th>Status</th></tr></thead><tbody>${rows.map((r) => `
     <tr class="click" data-id="${r.id}"><td>${scoreBadge(r.total)}</td>
       <td><strong>${esc(r.title || "Untitled")}</strong><br><span class="muted small">${esc(r.company || "")}</span></td>
@@ -253,14 +200,14 @@ async function renderDetail(id) {
       <div class="ringwrap"><div class="score ${scoreClass(s.total)}" style="font-size:34px;padding:8px 18px">${s.total == null ? "—" : Math.round(s.total)}</div><div class="ringlabel">Overall fit (0–100)</div></div>
       <div class="grow"><h1 style="margin-bottom:2px">${esc(p.title || "Untitled listing")}</h1>
         <div class="muted">${esc(p.company || "")}${p.location ? " · " + esc(p.location) : ""}</div>
-        ${l.url ? `<div class="small muted" style="word-break:break-all;margin-top:4px">${esc(l.url)} <button class="btn small" id="copy-listing-url">Copy address</button></div>` : ""}
+        ${l.url ? `<div class="small muted" style="word-break:break-all;margin-top:4px">${esc(l.url)}</div>` : ""}
         <div class="facts">${[p.level && "Level: " + levelName(p.level), p.years_required != null && p.years_required + "+ yrs asked", p.remote, p.pay && p.pay.text]
           .filter(Boolean).map((f) => `<span class="fact">${esc(f)}</span>`).join("")}</div>
         <div class="row" style="margin-top:12px">
           <label class="field">Status<select id="fb"><option value="">—</option>${["liked", "applied", "interview", "rejected"].map((f) => `<option ${l.feedback === f ? "selected" : ""}>${f}</option>`).join("")}</select></label>
-          ${l.url ? `<button class="btn small" id="openurl">Open in job-site window</button>` : ""}
           <button class="btn small danger" id="del">Delete</button></div></div>
     </div></section>
+    <section class="card" id="tailor"></section>
     <div class="grid2">
       <section class="card"><h2>Why this score</h2>
         <ul class="plain">${s.why.map((w) => `<li>${esc(w)}</li>`).join("") || "<li>Not enough information to explain.</li>"}</ul>
@@ -278,7 +225,7 @@ async function renderDetail(id) {
       <p class="muted small" style="margin-top:0">The model matched these by meaning. Consider mirroring the listing's wording so keyword filters also catch it.</p>
       ${s.meaning_pairs.map((m) => `<div class="pair"><strong>Listing:</strong> ${esc(m.requirement)}<br><strong>Your resume:</strong> ${esc(m.bullet)} <span class="muted">(${Math.round(m.similarity * 100)}% similar)</span></div>`).join("")}</section>` : ""}
     <section class="card"><h2>Counts toward this role profile</h2>
-      <p class="muted small" style="margin-top:0">Imported under the search that was active at the time. If this listing is for a different role or level, change it here so it doesn't skew that role's profile. Clear the title to leave it out of all profiles.</p>
+      <p class="muted small" style="margin-top:0">Added under the search that was active at the time. If this listing is for a different role or level, change it here so it doesn't skew that role's profile. Clear the title to leave it out of all profiles.</p>
       <div class="row">
         <label class="field grow">Role title<input type="text" id="tag-title" value="${esc(l.search_title || "")}" list="role-titles" placeholder="(none)"></label>
         <label class="field">Level<select id="tag-level"><option value="">(none)</option>${LEVELS.map(([v, n]) => `<option value="${v}" ${l.search_level === v ? "selected" : ""}>${n}</option>`).join("")}</select></label>
@@ -295,17 +242,140 @@ async function renderDetail(id) {
     await call("set_listing_tags", id, title, title ? $("#tag-level").value : "");
     toast(title ? "Role tag saved." : "Listing is now left out of role profiles.");
   });
-  if ($("#openurl")) $("#openurl").onclick = () => act(() => call("browser_open", l.url));
-  if ($("#copy-listing-url")) $("#copy-listing-url").onclick = () => act(async () => { await call("copy_text", l.url); toast("Address copied."); });
   $("#del").onclick = () => { if (confirm("Delete this listing?")) act(async () => { await call("delete_listing", id); show("listings"); }); };
+  renderTailor(id);
+}
+
+// ---- tailoring with Claude ----------------------------------------------------------------------------------------------
+const KIND_LABEL = { NAME: "Name", EMAIL: "Email", PHONE: "Phone", LOCATION: "Location", LINK: "Link", EMPLOYER: "Employer",
+  SCHOOL: "School", PROJECT: "Project", CERT: "Certificate", HIDDEN: "Added by you" };
+
+function diffHtml(a, b) {
+  const A = a.split(/\s+/).filter(Boolean), B = b.split(/\s+/).filter(Boolean), m = A.length, n = B.length;
+  const L = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = m - 1; i >= 0; i--) for (let j = n - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const oldOut = [], newOut = [];
+  let i = 0, j = 0;
+  while (i < m && j < n) {
+    if (A[i] === B[j]) { oldOut.push(esc(A[i])); newOut.push(esc(B[j])); i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) oldOut.push(`<del>${esc(A[i++])}</del>`);
+    else newOut.push(`<ins>${esc(B[j++])}</ins>`);
+  }
+  while (i < m) oldOut.push(`<del>${esc(A[i++])}</del>`);
+  while (j < n) newOut.push(`<ins>${esc(B[j++])}</ins>`);
+  return [oldOut.join(" "), newOut.join(" ")];
+}
+const flagHtml = (flags) => flags.map((f) => `<div class="flag ${f.level}">${f.level === "block" ? "Can't apply: " : f.level === "warn" ? "Check: " : ""}${esc(f.text)}</div>`).join("");
+
+async function renderTailor(listingId) {
+  const box = $("#tailor"); if (!box) return;
+  const s = await call("state");
+  const head = `<h2>Tailor my resume with Claude</h2>`;
+  if (!s.resume) { box.innerHTML = head + '<p class="muted">Upload your resume first (step 1).</p>'; return; }
+  const latest = await call("tailor_latest", listingId);
+  if (latest) return showTailorResults(listingId, latest);
+  box.innerHTML = head + `
+    <p class="muted" style="margin-top:0">Claude suggests truthful rewrites and keywords for this listing. You review what will be sent first, then accept or reject each suggestion.</p>
+    ${s.claude.available ? "" : '<p class="warn-note">Claude Code wasn\'t found, so this can\'t run yet. See step 1 for setup.</p>'}
+    <button class="btn primary" id="t-review" ${s.claude.available ? "" : "disabled"}>Review what will be sent…</button>`;
+  $("#t-review").onclick = () => act(() => showTailorReview(listingId));
+}
+
+async function showTailorReview(listingId, extraTerms) {
+  const box = $("#tailor");
+  const [pv, s] = await Promise.all([call("tailor_preview", listingId, extraTerms), call("state")]);
+  const blocked = pv.leaks.length > 0;
+  const rows = pv.items.map((i) => `<tr><td><code>${esc(i.placeholder)}</code></td><td>${esc(KIND_LABEL[i.kind] || i.kind)}</td><td>${esc(i.original)}</td>
+    <td class="muted small">${i.count ? "used " + i.count + "×" : "contact block (not sent)"}</td></tr>`).join("");
+  box.innerHTML = `<h2>Review what will be sent</h2>
+    <p class="muted" style="margin-top:0">Claude receives the listing and your resume with the details below replaced by placeholders. Nothing is sent until you press “Send to Claude”.</p>
+    ${blocked ? `<div class="flag block"><strong>Not safe to send.</strong> The privacy check found personal details that weren't hidden:<ul class="plain">${pv.leaks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>Add them under “Also hide” and update the preview.</div>`
+      : '<div class="ok-note">Privacy check passed: none of the details below appear anywhere in the text that will be sent.</div>'}
+    ${pv.warnings.map((w) => `<div class="flag warn">${esc(w)}</div>`).join("")}
+    <details open style="margin-top:12px"><summary>Replaced with placeholders (${pv.items.length})</summary>
+      <table style="margin-top:8px"><thead><tr><th>Placeholder</th><th>Kind</th><th>Your text</th><th></th></tr></thead><tbody>${rows}</tbody></table></details>
+    <label class="field" style="margin-top:12px">Also hide (anything else that identifies you, one per line; schools without “University” or “College” in the name are a common miss)
+      <textarea id="t-hide" style="min-height:64px">${esc(pv.hide_terms.join("\n"))}</textarea></label>
+    <div class="row" style="margin-top:8px"><button class="btn small" id="t-update">Update preview</button></div>
+    <details style="margin-top:12px"><summary>The exact resume text Claude will receive</summary><pre class="raw">${esc(pv.resume_text)}</pre></details>
+    <details style="margin-top:8px"><summary>The listing text Claude will receive</summary><pre class="raw">${esc(pv.listing_text)}</pre></details>
+    <p class="small muted" style="margin-top:12px">Your contact block (name, email, phone, links) is never sent; it is added back from your own file when you save.
+      Claude runs with all tools turned off, so it can't read anything else on this computer. Each run counts toward your Claude plan's usage.</p>
+    <div class="row" style="margin-top:8px">
+      <label class="field">Claude model (optional)<input type="text" id="t-model" value="${esc(s.claude_model || "")}" placeholder="default" style="width:180px"></label>
+      <button class="btn primary" id="t-send" style="align-self:flex-end" ${blocked ? "disabled" : ""}>Send to Claude</button>
+      <button class="btn" id="t-cancel" style="align-self:flex-end">Cancel</button></div>`;
+  const terms = () => $("#t-hide").value.split("\n").map((t) => t.trim()).filter(Boolean);
+  $("#t-update").onclick = () => act(() => showTailorReview(listingId, terms()));
+  $("#t-cancel").onclick = () => renderTailor(listingId);
+  $("#t-send").onclick = () => act(async () => {
+    await call("set_claude_model", $("#t-model").value.trim());
+    await runTailor(listingId, terms());
+  });
+}
+
+async function runTailor(listingId, terms) {
+  const box = $("#tailor"); const started = Date.now();
+  box.innerHTML = `<h2>Claude is working…</h2><p class="muted" id="t-timer">0 s. This usually takes 10 to 60 seconds. You can keep using the rest of the app.</p><div class="bar"><span class="indeterminate"></span></div>`;
+  const tick = setInterval(() => { const t = $("#t-timer"); if (t) t.textContent = `${Math.round((Date.now() - started) / 1000)} s. This usually takes 10 to 60 seconds. You can keep using the rest of the app.`; }, 1000);
+  try {
+    const record = await call("tailor_run", listingId, terms);
+    if (!$("#tailor")) return;                      // user navigated away; the result is saved and shows next time
+    showTailorResults(listingId, record);
+  } catch (e) {
+    toast(e.message, true);
+    if ($("#tailor")) box.innerHTML = `<h2>Tailor my resume with Claude</h2><div class="flag block">${esc(e.message)}</div><div class="row" style="margin-top:10px"><button class="btn primary" id="t-again">Try again</button></div>`;
+    if ($("#t-again")) $("#t-again").onclick = () => act(() => showTailorReview(listingId));
+  } finally { clearInterval(tick); }
+}
+
+function showTailorResults(listingId, record) {
+  const box = $("#tailor"), r = record.result;
+  const defaultOn = (item) => item.valid && !item.flags.some((f) => f.level === "warn");
+  const check = (item) => `<input type="checkbox" data-accept="${esc(item.id)}" ${defaultOn(item) ? "checked" : ""} ${item.valid ? "" : "disabled"} aria-label="Accept this suggestion">`;
+  const summary = r.summary ? (() => { const [o, n] = diffHtml(r.summary.original, r.summary.suggested);
+    return `<div class="edit ${r.summary.valid ? "" : "invalid"}"><label class="editrow">${check(r.summary)}<div><strong>Professional summary</strong>
+      <div class="diff old">${o}</div><div class="diff new">${n}</div><div class="muted small">${esc(r.summary.reason)}</div>${flagHtml(r.summary.flags)}</div></label></div>`; })() : "";
+  const skills = r.skills_to_add.map((k) => `<div class="edit ${k.valid ? "" : "invalid"}"><label class="editrow">${check(k)}<div>
+      <strong>Add skill: ${esc(k.skill)}</strong><div class="muted small">Evidence in your resume: “${esc(k.evidence)}”</div>
+      <div class="muted small">${esc(k.reason)}</div>${flagHtml(k.flags)}</div></label></div>`).join("");
+  const edits = r.bullet_edits.map((e) => { const [o, n] = diffHtml(e.original, e.suggested);
+    return `<div class="edit ${e.valid ? "" : "invalid"}"><label class="editrow">${check(e)}<div>
+      <div class="diff old">${o}</div><div class="diff new">${n}</div>
+      ${e.keywords_added.length ? `<div class="small">Keywords: ${e.keywords_added.map((k) => `<span class="chip meaning">${esc(k)}</span>`).join(" ")}</div>` : ""}
+      <div class="muted small">${esc(e.reason)}</div>${flagHtml(e.flags)}</div></label></div>`; }).join("");
+  const nothing = !summary && !skills && !edits;
+  const m = r.meta || {};
+  box.innerHTML = `<h2>Claude's suggestions</h2>
+    <p class="muted small" style="margin-top:0">${esc(record.created_at)} UTC${m.model ? " · " + esc(m.model) : ""}${m.seconds ? " · " + m.seconds + " s" : ""}.
+      Every suggestion was checked by the app before showing it. <span class="flag-key"><span class="flag warn">Check</span> items are unticked until you've confirmed they're true.</span></p>
+    ${nothing ? '<p class="muted">Claude didn\'t suggest any changes that passed the checks.</p>' : ""}
+    ${summary}${skills ? `<h2 style="margin-top:14px">Skills to add</h2>${skills}` : ""}${edits ? `<h2 style="margin-top:14px">Bullet edits</h2>${edits}` : ""}
+    ${r.gaps.length ? `<h2 style="margin-top:14px">Not on your resume, so not added</h2><p class="muted small" style="margin-top:0">The listing wants these but nothing in your resume supports them. Only claim them if you really have the experience.</p>
+      <ul class="plain">${r.gaps.map((g) => `<li><strong>${esc(g.skill)}</strong>: ${esc(g.advice)}</li>`).join("")}</ul>` : ""}
+    ${r.notes ? `<p class="muted small">${esc(r.notes)}</p>` : ""}
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="t-save">Save tailored resume (.docx)…</button>
+      <button class="btn" id="t-preview">Preview as text</button>
+      <button class="btn" id="t-rerun">Run again…</button>
+      <button class="btn small" id="t-sent">What was sent</button></div>
+    <div id="t-out"></div>`;
+  const accepted = () => [...box.querySelectorAll("[data-accept]:checked")].map((c) => c.dataset.accept);
+  $("#t-save").onclick = () => act(async () => {
+    const out = await call("tailor_export", record.id, accepted());
+    if (out) toast(`Saved: ${out.path}`);
+  });
+  $("#t-preview").onclick = () => act(async () => { $("#t-out").innerHTML = `<pre class="raw" style="margin-top:12px">${esc(await call("tailor_text", record.id, accepted()))}</pre>`; });
+  $("#t-sent").onclick = () => { $("#t-out").innerHTML = `<p class="muted small" style="margin-top:12px">This is exactly the resume text that was sent (personal details were placeholders):</p><pre class="raw">${esc(record.sent_text)}</pre>`; };
+  $("#t-rerun").onclick = () => act(() => showTailorReview(listingId));
 }
 
 // ---- 3. Role profiles ------------------------------------------------------------------------------------------------------
 async function renderRoles() {
   const opts = await call("role_options");
-  if (!opts.length) { $("#view").innerHTML = `<h1>Role profiles</h1><div class="card empty">Import listings while a search is set (step 1) and a profile of what that role typically asks for will build here.</div>`; return; }
+  if (!opts.length) { $("#view").innerHTML = `<h1>Role profiles</h1><div class="card empty">Add listings while a search is set (step 1) and a profile of what that role typically asks for will build here.</div>`; return; }
   $("#view").innerHTML = `<h1>Role profiles</h1>
-    <p class="sub">What listings for one role typically ask for, built from the listings you imported while searching for it.</p>
+    <p class="sub">What listings for one role typically ask for, built from the listings you added while searching for it.</p>
     <div class="row" style="margin-bottom:14px"><label class="field">Role<select id="role">${opts.map((o, i) => `<option value="${i}">${esc(o.title)} — ${esc(levelName(o.level))} (${o.listings})</option>`).join("")}</select></label></div>
     <div id="profile"></div>`;
   const load = () => act(async () => {
@@ -315,7 +385,7 @@ async function renderRoles() {
       <section class="card"><div class="detail-head">
         ${ring(p.readiness_percent ?? null, 130, "Your readiness")}
         <div class="grow"><span class="conf ${p.confidence}">${confText}</span>
-          <p style="margin:8px 0 0">Built from <strong>${p.listing_count}</strong> listing(s)${p.listing_count < 10 ? " — import about 10+ for a reliable profile" : ""}.</p>
+          <p style="margin:8px 0 0">Built from <strong>${p.listing_count}</strong> listing(s)${p.listing_count < 10 ? " — add about 10+ for a reliable profile" : ""}.</p>
           <p class="muted small">${p.readiness_percent == null ? "Upload a resume to see readiness." : `Your resume covers ${p.readiness_percent}% of the required-skill mentions across these listings.`}
           ${p.typical_years != null ? ` Typical experience asked: ${p.typical_years}+ years.` : ""}</p></div></div></section>
       <div class="grid2">
@@ -340,7 +410,7 @@ async function renderTerms() {
         <input type="text" list="skills" data-merge-in="${i}" placeholder="Merge into…" style="width:130px">
         <button class="btn small" data-merge="${i}">Merge</button>
         <button class="btn small" data-ignore="${i}">Ignore</button></div></td></tr>`).join("")}</tbody></table></section>`
-      : '<div class="card empty">Nothing new right now. Import more listings (at least two that mention the same new term) and suggestions appear here.</div>'}`;
+      : '<div class="card empty">Nothing new right now. Add more listings (at least two that mention the same new term) and suggestions appear here.</div>'}`;
   const done = (msg) => { toast(msg); show("terms"); };
   document.querySelectorAll("[data-add]").forEach((b) => (b.onclick = () => act(async () => { const i = b.dataset.add; await call("accept_term", cands[i].term, $(`[data-cat="${i}"]`).value); done(`Added “${cands[i].term}”.`); })));
   document.querySelectorAll("[data-merge]").forEach((b) => (b.onclick = () => act(async () => { const i = b.dataset.merge, target = $(`[data-merge-in="${i}"]`).value; if (!target) throw new Error("Pick the existing skill to merge into."); await call("accept_term", cands[i].term, "skill", target); done(`Merged into ${target}.`); })));

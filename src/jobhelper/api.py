@@ -5,35 +5,65 @@ JavaScript never has to deal with exceptions. Names starting with "_" are privat
 not exposed to the window.
 """
 import functools
+import re
 import threading
+import time
+from pathlib import Path
 
-from jobhelper.browser import pane
+from jobhelper.paths import data_dir
 from jobhelper.service import JobHelper
+from jobhelper.tailoring import claude_cli
+
+
+def _envelope(fn, *args, **kwargs):
+    try:
+        return {"ok": True, "data": fn(*args, **kwargs)}
+    except (ValueError, FileNotFoundError) as e:
+        return {"ok": False, "error": str(e)}
+    except Exception as e:  # noqa: BLE001 - never crash the window on a bad action
+        return {"ok": False, "error": f"Unexpected error: {type(e).__name__}: {e}"}
 
 
 def _safe(fn):
+    """Run one request at a time (the database connection is shared between window threads)."""
+
     @functools.wraps(fn)
     def wrapper(self, *args, **kwargs):
         with self._lock:
-            try:
-                return {"ok": True, "data": fn(self, *args, **kwargs)}
-            except (ValueError, FileNotFoundError) as e:
-                return {"ok": False, "error": str(e)}
-            except Exception as e:  # noqa: BLE001 - never crash the window on a bad action
-                return {"ok": False, "error": f"Unexpected error: {type(e).__name__}: {e}"}
+            return _envelope(fn, self, *args, **kwargs)
 
     return wrapper
 
 
+def _safe_unlocked(fn):
+    """For slow calls that take the lock themselves only around their database steps."""
+
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        return _envelope(fn, self, *args, **kwargs)
+
+    return wrapper
+
+
+def _filename(listing: dict) -> str:
+    base = " - ".join(p for p in (listing.get("company"), listing.get("title")) if p) or "listing"
+    return "Tailored resume - " + re.sub(r"[^\w .&-]+", "", base).strip()[:60] + ".docx"
+
+
 class Api:
-    def __init__(self, helper: JobHelper | None = None, browser=None, clipboard=None, file_picker=None,
-                 clipboard_write=None):
+    def __init__(self, helper: JobHelper | None = None, file_picker=None, file_saver=None):
         self._helper = helper or JobHelper()
-        self._browser = browser
-        self._clipboard = clipboard
-        self._clipboard_write = clipboard_write
-        self._file_picker = file_picker      # () -> path | None   (native dialog, set by app.py)
+        self._file_picker = file_picker      # () -> path | None        (native open dialog, set by app.py)
+        self._file_saver = file_saver        # (suggested_name) -> path | None   (native save dialog)
         self._lock = threading.RLock()
+        self._claude_cache = (0.0, None)
+
+    def _claude_status(self) -> dict:
+        stamp, value = self._claude_cache
+        if value is None or time.time() - stamp > 60:
+            value = claude_cli.status()
+            self._claude_cache = (time.time(), value)
+        return value
 
     # -- overview ------------------------------------------------------------------
     @_safe
@@ -47,7 +77,8 @@ class Api:
             "search": h.get_search(),
             "listing_count": h.conn.execute("SELECT COUNT(*) FROM listings").fetchone()[0],
             "model_available": h.embedder is not None,
-            "browser_available": self._browser is not None,
+            "claude": self._claude_status(),
+            "claude_model": h.claude_model(),
         }
 
     # -- resume --------------------------------------------------------------------
@@ -78,15 +109,7 @@ class Api:
     def set_search(self, titles, levels):
         return self._helper.set_search(list(titles), list(levels))
 
-    @_safe
-    def search_links(self, location: str = ""):
-        s = self._helper.get_search()
-        if not s["titles"]:
-            raise ValueError("Enter at least one job title first.")
-        level = s["levels"][0] if len(s["levels"]) == 1 else None
-        return {t: pane.search_links(t, level, location) for t in s["titles"]}
-
-    # -- importing listings -----------------------------------------------------------
+    # -- importing listings (pasted text only) ------------------------------------------------
     @_safe
     def import_text(self, text: str, url: str | None = None):
         return self._helper.import_listing(text, url or None)
@@ -97,47 +120,6 @@ class Api:
         if not results:
             raise ValueError("No listings found. Separate listings with a line containing ====")
         return results
-
-    @_safe
-    def import_clipboard(self, url: str | None = None):
-        """Import the text the user copied. `url` is the address shown in the app (the user may have
-        edited it); if it's empty the job-site window's current address is used."""
-        if self._clipboard is None:
-            raise ValueError("Clipboard access isn't available here.")
-        text = self._clipboard()
-        if not text.strip():
-            raise ValueError("The clipboard is empty. In the job site window, select the listing text "
-                             "(Ctrl+A selects the whole page) and copy it with Ctrl+C, then try again.")
-        url = (url or "").strip() or (self._browser.current_url() if self._browser else None)
-        return self._helper.import_listing(text, url)
-
-    @_safe
-    def browser_status(self):
-        """Is the job-site window open, and which address is it showing right now?"""
-        if self._browser is None:
-            return {"available": False, "open": False, "url": None}
-        return {"available": True, "open": self._browser.is_open(), "url": self._browser.current_url()}
-
-    @_safe
-    def copy_text(self, text: str):
-        if self._clipboard_write is None:
-            raise ValueError("Copying isn't available here; select the text and press Ctrl+C.")
-        self._clipboard_write(str(text))
-
-    # -- companion browser ---------------------------------------------------------------
-    @_safe
-    def browser_open(self, url: str):
-        if self._browser is None:
-            raise ValueError("The companion browser isn't available here.")
-        self._browser.open(url)
-
-    @_safe
-    def browser_action(self, action: str):
-        if self._browser is None:
-            raise ValueError("The companion browser isn't available here.")
-        if action not in ("back", "forward", "reload", "dock", "close"):
-            raise ValueError(f"Unknown browser action: {action}")
-        getattr(self._browser, action)()
 
     # -- listings ---------------------------------------------------------------------------
     @_safe
@@ -164,6 +146,54 @@ class Api:
     @_safe
     def delete_listing(self, listing_id: int):
         self._helper.delete_listing(int(listing_id))
+
+    # -- tailoring with Claude ---------------------------------------------------------------------
+    @_safe
+    def tailor_preview(self, listing_id: int, extra_terms=None):
+        """What would be sent (personal details already replaced). Sends nothing."""
+        return self._helper.tailor_preview(int(listing_id), extra_terms=extra_terms)
+
+    @_safe_unlocked
+    def tailor_run(self, listing_id: int, extra_terms=None):
+        """Send the redacted resume + listing to Claude and return the checked suggestions.
+
+        Takes 10-60 seconds, so the lock is held only for the database steps, not while Claude works.
+        """
+        with self._lock:
+            job = self._helper.tailor_prepare(int(listing_id), extra_terms=extra_terms)
+        result = self._helper.tailor_call(job)
+        with self._lock:
+            return self._helper.tailor_finish(job, result)
+
+    @_safe
+    def tailor_latest(self, listing_id: int):
+        return self._helper.tailor_latest(int(listing_id))
+
+    @_safe
+    def tailor_text(self, tailoring_id: int, accepted_ids=None):
+        return self._helper.tailor_text(int(tailoring_id), accepted_ids or [])
+
+    @_safe
+    def tailor_export(self, tailoring_id: int, accepted_ids=None):
+        record = self._helper.tailor_get(int(tailoring_id))
+        if record is None:
+            raise ValueError("That tailoring result no longer exists.")
+        name = _filename(self._helper.get_listing(record["listing_id"]) or {})
+        if self._file_saver is not None:
+            chosen = self._file_saver(name)
+            if not chosen:
+                return None                                   # the user cancelled the dialog
+        else:
+            chosen = str(data_dir() / "exports" / name)
+        path = Path(chosen)
+        if path.suffix.lower() != ".docx":
+            path = path.with_suffix(".docx")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return {"path": self._helper.tailor_export(int(tailoring_id), accepted_ids or [], path)}
+
+    @_safe
+    def set_claude_model(self, model: str | None = None):
+        self._helper.set_claude_model(model)
 
     # -- vocabulary & role profiles --------------------------------------------------------------
     @_safe

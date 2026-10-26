@@ -14,29 +14,53 @@ def _arg(name: str, default=None):
     return default
 
 
+def enable_context_menu(window) -> bool:
+    """Turn on the right-click menu (Copy, Paste...) for the window.
+
+    pywebview only enables it in debug mode, which would also switch on developer tools, so the
+    WebView2 setting is flipped directly. Windows (WebView2) only; returns False elsewhere.
+    """
+    try:
+        from System import Action
+
+        native = window.native
+
+        def apply():
+            native.webview.CoreWebView2.Settings.AreDefaultContextMenusEnabled = True
+
+        native.webview.Invoke(Action(apply))   # WebView2 settings must be changed on the UI thread
+        return True
+    except Exception:  # noqa: BLE001 - other platforms / not ready yet: Ctrl+C and Ctrl+V still work
+        return False
+
+
+def _first(result):
+    if not result:
+        return None
+    return result[0] if isinstance(result, (list, tuple)) else result
+
+
 def run_window() -> None:
     import webview
 
     from jobhelper.api import Api
-    from jobhelper.browser.clipboard import read_clipboard, write_clipboard
-    from jobhelper.browser.pane import CompanionBrowser, enable_context_menu
 
-    browser = CompanionBrowser()
     holder = {}
 
     def pick_file():
-        result = holder["window"].create_file_dialog(
-            webview.OPEN_DIALOG, file_types=("Resume files (*.pdf;*.docx)", "All files (*.*)"))
-        return result[0] if result else None
+        return _first(holder["window"].create_file_dialog(
+            webview.OPEN_DIALOG, file_types=("Resume files (*.pdf;*.docx)", "All files (*.*)")))
 
-    api = Api(browser=browser, clipboard=read_clipboard, file_picker=pick_file, clipboard_write=write_clipboard)
-    # text_select=True so text in the app (scores, listing text, addresses) can be selected and copied
-    window = webview.create_window("Job Search Helper", str(WEB_INDEX), js_api=api, width=1000, height=760,
+    def save_file(suggested_name: str):
+        return _first(holder["window"].create_file_dialog(
+            webview.SAVE_DIALOG, save_filename=suggested_name, file_types=("Word document (*.docx)",)))
+
+    api = Api(file_picker=pick_file, file_saver=save_file)
+    # text_select=True so text in the app (scores, listing text, suggestions) can be selected and copied
+    window = webview.create_window("Job Search Helper", str(WEB_INDEX), js_api=api, width=1100, height=800,
                                    min_size=(760, 560), text_select=True)
     holder["window"] = window
     window.events.loaded += lambda: enable_context_menu(window)
-    browser.attach(window)
-    window.events.closed += browser.close
     smoke = "--smoke" in sys.argv
     # `--smoke` opens the real window, checks the bridge answers, then exits (used to test builds).
     webview.start(_smoke_check if smoke else None, (window, api) if smoke else None)
@@ -54,7 +78,10 @@ def _say(*parts) -> None:
 def _smoke_check(window, api) -> None:
     """Open the real window, then verify from inside the page that the Python bridge works."""
     time.sleep(3)
-    _say("SMOKE python state ok:", api.state()["ok"])
+    state = api.state()
+    _say("SMOKE python state ok:", state["ok"])
+    # proves the packaged app can start Claude Code (only `claude --version`; no request is sent)
+    _say("SMOKE claude:", state["data"]["claude"] if state["ok"] else state)
     # evaluate_js does not wait for promises: start the call, then read the stored result back
     window.evaluate_js("window.__smoke = 'pending'; window.pywebview.api.state()"
                        ".then(r => { window.__smoke = JSON.stringify({ok: r.ok, model: r.data.model_available}); })"

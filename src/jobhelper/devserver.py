@@ -1,8 +1,8 @@
 """Dev/browser mode: serves the screens over http://127.0.0.1 and forwards /api/<name> calls.
 
 Used to test the interface in an ordinary browser (and in automated checks) without the
-native window. It listens on the loopback address only. The companion browser, clipboard and
-native file picker are unavailable in this mode, so those buttons report that politely.
+native window. It listens on the loopback address only. The native open/save dialogs are
+unavailable in this mode: use `upload_resume_path`, and exports go to the data folder's exports/.
 """
 import json
 import mimetypes

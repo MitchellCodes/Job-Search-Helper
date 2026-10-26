@@ -98,3 +98,24 @@ pre.raw { white-space: pre-wrap; font: 12px/1.5 ui-monospace, Consolas, monospac
   nav { flex-direction: row; flex-wrap: wrap; } .side-foot { display: none; }
   main { padding: 16px; }
 }
+
+/* ---- tailoring with Claude ---- */
+.ok-note { background: var(--good-soft); color: var(--good); border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 10px; }
+.warn-note { background: var(--weak-soft); color: var(--weak); border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 0 0 10px; }
+code { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font: 12px ui-monospace, Consolas, monospace; }
+.flag { border-radius: 6px; padding: 5px 10px; font-size: 12px; margin-top: 6px; }
+.flag.warn { background: var(--weak-soft); color: var(--weak); }
+.flag.block { background: var(--bad-soft); color: var(--bad); }
+.flag.info { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.edit { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+.edit.invalid { opacity: .75; background: var(--bg); }
+.editrow { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+.editrow input { margin-top: 4px; width: 16px; height: 16px; flex: none; }
+.editrow > div { flex: 1; min-width: 0; }
+.diff { padding: 6px 10px; border-radius: 6px; margin: 4px 0; font-size: 13px; }
+.diff.old { background: var(--bad-soft); } .diff.new { background: var(--good-soft); }
+ins { text-decoration: none; background: color-mix(in srgb, var(--good) 28%, transparent); border-radius: 3px; padding: 0 2px; font-weight: 600; }
+del { background: color-mix(in srgb, var(--bad) 22%, transparent); border-radius: 3px; padding: 0 2px; }
+.bar .indeterminate { width: 35%; animation: slide 1.3s ease-in-out infinite; }
+@keyframes slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .bar .indeterminate { animation: none; width: 100%; opacity: .5; } }

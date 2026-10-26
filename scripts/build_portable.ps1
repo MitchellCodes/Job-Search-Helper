@@ -35,9 +35,10 @@ if (Test-Path $data) {
 
 Remove-Item (Join-Path $root "dist"), (Join-Path $root "build") -Recurse -Force -ErrorAction SilentlyContinue
 
-# PIL is excluded because nothing in the app uses it; it only gets bundled if a dev tool installed it.
+# PIL and tkinter are excluded because nothing in the app uses them (PIL only gets bundled if a dev
+# tool installed it; tkinter was needed only by the removed clipboard code).
 & $py -m PyInstaller --noconfirm --clean --name JobSearchHelper --windowed --paths src `
-    --collect-submodules webview --exclude-module PIL `
+    --collect-submodules webview --exclude-module PIL --exclude-module tkinter `
     --add-data "src/jobhelper/models;jobhelper/models" `
     --add-data "src/jobhelper/web;jobhelper/web" `
     --add-data "src/jobhelper/data;jobhelper/data" `
